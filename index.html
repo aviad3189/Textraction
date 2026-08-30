@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Textraction — Text-Guided Speaker Extraction &amp; Enhancement</title>
+<style>
+  :root {
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c232d; --line:#2a3340;
+    --txt:#e6edf3; --dim:#9aa7b4; --acc:#5aa2ff; --acc2:#3fb27f;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55; }
+  header { padding:56px 24px 28px; text-align:center;
+    background:radial-gradient(1200px 420px at 50% -120px,#1b2a44,transparent); }
+  header h1 { margin:0 0 6px; font-size:2.2rem; letter-spacing:-.02em; }
+  header .sub { margin:0 0 16px; color:var(--acc); font-size:1.05rem; font-weight:500; }
+  .authors { color:var(--txt); font-size:.95rem; margin:0 0 2px; }
+  .affil { color:var(--dim); font-size:.83rem; margin:0; }
+  .links { margin:18px 0 0; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .links a { display:inline-flex; align-items:center; gap:7px; text-decoration:none;
+    background:var(--panel); border:1px solid var(--line); color:var(--txt);
+    padding:9px 16px; border-radius:22px; font-size:.9rem; font-weight:500; transition:.15s; }
+  .links a:hover { border-color:var(--acc); color:var(--acc); }
+  header .abstract { margin:22px auto 0; max-width:780px; color:var(--dim); font-size:1rem; text-align:left; }
+  .figwrap { max-width:940px; margin:34px auto 8px; padding:0 24px; }
+  .figwrap img, .figwrap video { width:100%; border:1px solid var(--line); border-radius:12px; display:block; }
+  .figwrap video { background:#000; }
+  .figwrap img { background:#fff; }
+  .figcap { text-align:center; color:var(--dim); font-size:.85rem; margin-top:8px; }
+  .highlights { max-width:940px; margin:28px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }
+  .hl { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .hl h4 { margin:0 0 4px; font-size:.92rem; color:var(--acc2); }
+  .hl p { margin:0; font-size:.82rem; color:var(--dim); }
+  main { max-width:1180px; margin:0 auto; padding:8px 24px 80px; }
+  .task { margin-top:56px; }
+  .task h2 { font-size:1.4rem; margin:0 0 6px; padding-bottom:8px;
+    border-bottom:2px solid var(--acc); display:inline-block; }
+  .blurb { color:var(--dim); margin:0 0 20px; max-width:820px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .card-head { display:flex; justify-content:space-between; align-items:baseline; }
+  .idx { font-weight:600; }
+  .scn { color:var(--dim); font-size:.78rem; font-family:ui-monospace,monospace; }
+  .tag { display:inline-block; font-size:.68rem; text-transform:uppercase;
+    letter-spacing:.06em; padding:2px 8px; border-radius:20px; margin-bottom:6px; font-weight:600; }
+  .mixtag { background:#3a2b1a; color:#f0b866; }
+  .prompt { background:#1a2c40; color:var(--acc); }
+  .mix { background:var(--panel2); border-radius:8px; padding:10px; }
+  .io { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .io.single { grid-template-columns:1fr; }
+  .col { background:var(--panel2); border-radius:8px; padding:10px;
+    border-left:3px solid var(--acc2); }
+  .txt { margin:0 0 8px; font-size:.86rem; color:var(--txt); min-height:2.6em; }
+  audio { width:100%; height:34px; }
+  footer { text-align:center; color:var(--dim); font-size:.8rem; padding:24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Textraction</h1>
+  <p class="sub">SC&ndash;MC Text-Guided Extraction and Speaker Enhancement</p>
+  <p class="authors">Aviad Eisenberg &nbsp;&middot;&nbsp; Sharon Gannot &nbsp;&middot;&nbsp; Shlomo E. Chazan</p>
+  <p class="affil">Faculty of Engineering, Bar-Ilan University &nbsp;&middot;&nbsp; OriginAI, Israel</p>
+  <p class="abstract">A single unified model that extracts a desired speaker &mdash; or any subset of speakers and
+     noise sources &mdash; from a mixture, using only a natural-language prompt. The same network handles both
+     single-channel and multi-channel inputs, conditions on either semantic attributes or relative spatial descriptions,
+     and reduces to a state-of-the-art speech enhancer when only one speaker is present. Prompts are free-form and may
+     specify entities to <em>keep</em>, to <em>remove</em>, or both.</p>
+</header>
+
+<div class="highlights">
+  <div class="hl"><h4>Unified SC &amp; MC</h4><p>One architecture for single- and multi-microphone inputs, exploiting spatial cues when present.</p></div>
+  <div class="hl"><h4>Free-form prompts</h4><p>Keep / remove any subset of up to two speakers and two noises &mdash; robust to paraphrasing.</p></div>
+  <div class="hl"><h4>Lightweight text encoder</h4><p>A fine-tuned E5 retrieval model, contrastively tuned for keep-vs-remove polarity &mdash; no heavy LLM.</p></div>
+  <div class="hl"><h4>Relative spatial cues</h4><p>Describes speakers by relative position (near/far, left/right) in plain language.</p></div>
+</div>
+
+<div class="figwrap">
+  <video src="assets/overview.mp4" controls preload="metadata" playsinline></video>
+  <div class="figcap">Overview &amp; demo walkthrough</div>
+</div>
+<div class="figwrap">
+  <img src="assets/tg_model.png" alt="Textraction model architecture">
+  <div class="figcap">Model architecture &mdash; RI-STFT U-Net with a text-conditioned (FiLM) transformer bottleneck.</div>
+</div>
+
+<main>
+
+    <section class="task">
+      <h2>Multi-Channel Extraction</h2>
+      <p class="blurb">Two speakers and two noise sources are captured by a two-microphone array in a reverberant room. A free-form prompt names which entities to keep or remove, and the model reconstructs exactly that subset — exploiting spatial diversity when it is available.</p>
+      <div class="grid">
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 1</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_extraction/ex1/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Remove the weak speaker.</p>
+            <audio controls preload="none" src="assets/mc_extraction/ex1/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 2</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_extraction/ex2/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Kindly eliminate the loudspeaker from the recording.</p>
+            <audio controls preload="none" src="assets/mc_extraction/ex2/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 3</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_extraction/ex3/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Eliminate the gentle mallet instrument playing a delicate melody and the guy speaker.</p>
+            <audio controls preload="none" src="assets/mc_extraction/ex3/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 4</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_extraction/ex4/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Exclude the running motor vehicle engine, the softly purring cat, and the loud guy speaker, while keeping the female weak speaker.</p>
+            <audio controls preload="none" src="assets/mc_extraction/ex4/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 5</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_extraction/ex5/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Preserve the chime ringing, exclude the speakers, and keep the door opening and closing sounds.</p>
+            <audio controls preload="none" src="assets/mc_extraction/ex5/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+    <section class="task">
+      <h2>Single-Channel Extraction</h2>
+      <p class="blurb">The same text-guided extraction from a single microphone, with no spatial cues at all. Separation is driven purely by the semantic attributes in the prompt (gender, relative loudness, noise identity).</p>
+      <div class="grid">
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 1</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_extraction/ex1/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Maintain the female, continue with the motorboat engine sound, and exclude the cat&#x27;s meowing.</p>
+            <audio controls preload="none" src="assets/sc_extraction/ex1/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 2</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_extraction/ex2/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Kindly eliminate the guy.</p>
+            <audio controls preload="none" src="assets/sc_extraction/ex2/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 3</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_extraction/ex3/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Maintain the presence of the person playing a musical instrument, keep the water splashing and gurgling sounds, and eliminate both the man weak speaker and the female loud speaker.</p>
+            <audio controls preload="none" src="assets/sc_extraction/ex3/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 4</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_extraction/ex4/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Eliminate the sound of the race car accelerating and revving, as well as the female.</p>
+            <audio controls preload="none" src="assets/sc_extraction/ex4/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 5</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_extraction/ex5/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Kindly eliminate the guy speaker and the steady rhythm of the acoustic guitar.</p>
+            <audio controls preload="none" src="assets/sc_extraction/ex5/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 6</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_extraction/ex6/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Maintain the Drum and Bass music in the background and continue featuring the guy.</p>
+            <audio controls preload="none" src="assets/sc_extraction/ex6/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+    <section class="task">
+      <h2>Spatially-Guided Extraction</h2>
+      <p class="blurb">Here the prompt describes a speaker by relative position rather than voice attributes — e.g. “the voice closer to the array” or “the speaker on the left.” The model resolves the relative spatial relation between the two talkers.</p>
+      <div class="grid">
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 1</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/spatial_extraction/ex1/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Isolate the speaker found to the left side</p>
+            <audio controls preload="none" src="assets/spatial_extraction/ex1/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 2</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/spatial_extraction/ex2/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Separate the speaker situated toward the left</p>
+            <audio controls preload="none" src="assets/spatial_extraction/ex2/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 3</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/spatial_extraction/ex3/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Extract the speaker situated toward the left</p>
+            <audio controls preload="none" src="assets/spatial_extraction/ex3/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 4</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/spatial_extraction/ex4/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Keep the voice who is farther away and oriented more to the right</p>
+            <audio controls preload="none" src="assets/spatial_extraction/ex4/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 5</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/spatial_extraction/ex5/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Isolate the voice that is nearer and facing more leftward</p>
+            <audio controls preload="none" src="assets/spatial_extraction/ex5/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+    <section class="task">
+      <h2>Multi-Channel Enhancement</h2>
+      <p class="blurb">A single target speaker buried in heavy background noise, recorded on two microphones. The prompt simply asks to keep the speaker / remove the noise; enhancement is handled as a special case of the same extraction model. These examples were chosen for their very low input SNR to show the denoising under hard conditions.</p>
+      <div class="grid">
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 1</span><span class="scn">input SNR −6.2 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_enhancement/ex1/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Remove all background noise and preserve only the primary speaker.</p>
+            <audio controls preload="none" src="assets/mc_enhancement/ex1/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 2</span><span class="scn">input SNR −1.6 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_enhancement/ex2/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Extract the human voice and discard any background noise.</p>
+            <audio controls preload="none" src="assets/mc_enhancement/ex2/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 3</span><span class="scn">input SNR −1.3 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_enhancement/ex3/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Clean this clip by removing all noise and retaining only the human voice.</p>
+            <audio controls preload="none" src="assets/mc_enhancement/ex3/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 4</span><span class="scn">input SNR −0.9 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_enhancement/ex4/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Isolate the vocal track and eliminate unwanted noise such as traffic, people talking, or machinery.</p>
+            <audio controls preload="none" src="assets/mc_enhancement/ex4/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 5</span><span class="scn">input SNR −0.9 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/mc_enhancement/ex5/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Suppress noise and enhance the clarity of the vocal track.</p>
+            <audio controls preload="none" src="assets/mc_enhancement/ex5/output.wav"></audio>
+          </div>
+        </div>
+      </div></div>
+    </section>
+    <section class="task">
+      <h2>Single-Channel Enhancement</h2>
+      <p class="blurb">The same denoising from a single microphone. On this task Textraction surpasses the dedicated HD-DEMUCS-TF baseline, despite being a general text-guided extractor. Again, the noisiest inputs were picked on purpose.</p>
+      <div class="grid">
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 1</span><span class="scn">input SNR −5.7 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_enhancement/ex1/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Remove background chatter and retain only the speaker.</p>
+            <audio controls preload="none" src="assets/sc_enhancement/ex1/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 2</span><span class="scn">input SNR −1.6 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_enhancement/ex2/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Remove background chatter and retain only the main voice.</p>
+            <audio controls preload="none" src="assets/sc_enhancement/ex2/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 3</span><span class="scn">input SNR −0.7 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_enhancement/ex3/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Denoise this recording so that only the speaker remains clearly audible.</p>
+            <audio controls preload="none" src="assets/sc_enhancement/ex3/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 4</span><span class="scn">input SNR −0.7 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_enhancement/ex4/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Suppress noise and enhance the clarity of the primary speaker.</p>
+            <audio controls preload="none" src="assets/sc_enhancement/ex4/output.wav"></audio>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="idx">Example 5</span><span class="scn">input SNR −0.6 dB</span></div>
+        <div class="mix">
+          <span class="tag mixtag">Mixture (input)</span>
+          <audio controls preload="none" src="assets/sc_enhancement/ex5/mix.wav"></audio>
+        </div>
+
+        <div class="io single">
+          <div class="col">
+            <span class="tag prompt">Prompt</span>
+            <p class="txt">Keep only the human voice and eliminate everything else.</p>
+            <audio controls preload="none" src="assets/sc_enhancement/ex5/output.wav"></audio>
+          </div>
+        </div>
+      </div></div>
+    </section>
+</main>
+<footer>Demo built from held-out evaluation scenarios. Best heard with headphones, especially the spatial examples.<br>
+Each example shows the input mixture, one prompt, and the corresponding extracted output.</footer>
+</body>
+</html>
